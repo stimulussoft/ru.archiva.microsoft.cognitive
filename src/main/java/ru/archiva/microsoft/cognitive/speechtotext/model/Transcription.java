@@ -61,8 +61,8 @@ public class Transcription {
   /**
    * The status of the object.
    */
-  @JsonAdapter(StatusEnum.Adapter.class)
-  public enum StatusEnum {
+  @JsonAdapter(Status.Adapter.class)
+  public enum Status {
     NOTSTARTED("NotStarted"),
     RUNNING("Running"),
     SUCCEEDED("Succeeded"),
@@ -70,7 +70,7 @@ public class Transcription {
 
     private String value;
 
-    StatusEnum(String value) {
+    Status(String value) {
       this.value = value;
     }
     public String getValue() {
@@ -81,28 +81,28 @@ public class Transcription {
     public String toString() {
       return String.valueOf(value);
     }
-    public static StatusEnum fromValue(String text) {
-      for (StatusEnum b : StatusEnum.values()) {
+    public static Status fromValue(String text) {
+      for (Status b : Status.values()) {
         if (String.valueOf(b.value).equals(text)) {
           return b;
         }
       }
       return null;
     }
-    public static class Adapter extends TypeAdapter<StatusEnum> {
+    public static class Adapter extends TypeAdapter<Status> {
       @Override
-      public void write(final JsonWriter jsonWriter, final StatusEnum enumeration) throws IOException {
+      public void write(final JsonWriter jsonWriter, final Status enumeration) throws IOException {
         jsonWriter.value(enumeration.getValue());
       }
 
       @Override
-      public StatusEnum read(final JsonReader jsonReader) throws IOException {
+      public Status read(final JsonReader jsonReader) throws IOException {
         String value = jsonReader.nextString();
-        return StatusEnum.fromValue(String.valueOf(value));
+        return Status.fromValue(String.valueOf(value));
       }
     }
   }  @SerializedName("status")
-  private StatusEnum status = null;
+  private Status status = null;
 
   @SerializedName("createdDateTime")
   private OffsetDateTime createdDateTime = null;
@@ -330,7 +330,7 @@ public class Transcription {
    * The status of the object.
    * @return status
   **/
-  public StatusEnum getStatus() {
+  public Status getStatus() {
     return status;
   }
 

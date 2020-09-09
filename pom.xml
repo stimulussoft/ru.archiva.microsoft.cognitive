@@ -5,9 +5,9 @@
   <artifactId>speech-to-text</artifactId>
   <packaging>jar</packaging>
   <name>speech-to-text</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <url>https://github.com/stimulussoft/speech-to-text</url>
-  <description>REST client for Microsoft speech to text service</description>
+  <description>REST client version 3 for Microsoft speech to text service</description>
   <scm>
     <connection>scm:git:git@github.com:stimulussoft/speech-to-text.git</connection>
     <developerConnection>scm:git:git@github.com:stimulussoft/speech-to-text.git</developerConnection>

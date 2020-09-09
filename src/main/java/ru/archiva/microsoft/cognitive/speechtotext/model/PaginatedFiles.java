@@ -2,7 +2,6 @@ package ru.archiva.microsoft.cognitive.speechtotext.model;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.io.File;
 import java.util.List;
 import java.util.Objects;
 /**

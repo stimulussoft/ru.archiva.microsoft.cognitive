@@ -19,6 +19,7 @@ import ru.archiva.microsoft.cognitive.speechtotext.auth.ApiKeyAuth;
 import ru.archiva.microsoft.cognitive.speechtotext.auth.Authentication;
 import ru.archiva.microsoft.cognitive.speechtotext.auth.HttpBasicAuth;
 import ru.archiva.microsoft.cognitive.speechtotext.auth.OAuth;
+import ru.archiva.microsoft.cognitive.speechtotext.model.File;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
@@ -26,13 +27,14 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
@@ -56,12 +58,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.util.Objects.nonNull;
+
 public class ApiClient {
 
     private String basePath = "https://eastus.api.cognitive.microsoft.com/speechtotext/v3.0";
     private boolean debugging = false;
     private Map<String, String> defaultHeaderMap = new HashMap<>();
-    private String tempFolderPath = null;
+    private Path tempFolderPath = null;
 
     private Map<String, Authentication> authentications;
 
@@ -91,7 +95,7 @@ public class ApiClient {
         json = new JSON();
 
         // Set default User-Agent.
-        setUserAgent("Swagger-Codegen/1.0.0/java");
+        setUserAgent("Cinga/1.0.0/java");
 
         // Setup authentications (key: authentication name, value: authentication).
         authentications = new HashMap<>();
@@ -360,7 +364,7 @@ public class ApiClient {
     /**
      * Add a default header.
      *
-     * @param key The header's key
+     * @param key   The header's key
      * @param value The header's value
      * @return ApiClient
      */
@@ -404,10 +408,10 @@ public class ApiClient {
      * with file response. The default value is <code>null</code>, i.e. using
      * the system's default tempopary folder.
      *
-     * @see <a href="https://docs.oracle.com/javase/7/docs/api/java/io/File.html#createTempFile">createTempFile</a>
      * @return Temporary folder path
+     * @see <a href="https://docs.oracle.com/javase/7/docs/api/java/io/File.html#createTempFile">createTempFile</a>
      */
-    public String getTempFolderPath() {
+    public Path getTempFolderPath() {
         return tempFolderPath;
     }
 
@@ -417,7 +421,7 @@ public class ApiClient {
      * @param tempFolderPath Temporary folder path
      * @return ApiClient
      */
-    public ApiClient setTempFolderPath(String tempFolderPath) {
+    public ApiClient setTempFolderPath(Path tempFolderPath) {
         this.tempFolderPath = tempFolderPath;
         return this;
     }
@@ -502,7 +506,7 @@ public class ApiClient {
             return jsonStr.substring(1, jsonStr.length() - 1);
         } else if (param instanceof Collection) {
             StringBuilder b = new StringBuilder();
-            for (Object o : (Collection)param) {
+            for (Object o : (Collection) param) {
                 if (b.length() > 0) {
                     b.append(",");
                 }
@@ -516,10 +520,10 @@ public class ApiClient {
 
     /**
      * Formats the specified query parameter to a list containing a single {@code Pair} object.
-     *
+     * <p>
      * Note that {@code value} must not be a collection.
      *
-     * @param name The name of the parameter.
+     * @param name  The name of the parameter.
      * @param value The value of the parameter.
      * @return A list containing a single {@code Pair} object.
      */
@@ -535,12 +539,12 @@ public class ApiClient {
 
     /**
      * Formats the specified collection query parameters to a list of {@code Pair} objects.
-     *
+     * <p>
      * Note that the values of each of the returned Pair objects are percent-encoded.
      *
      * @param collectionFormat The collection format of the parameter.
-     * @param name The name of the parameter.
-     * @param value The value of the parameter.
+     * @param name             The name of the parameter.
+     * @param value            The value of the parameter.
      * @return A list of {@code Pair} objects.
      */
     public List<Pair> parameterToPairs(String collectionFormat, String name, Collection value) {
@@ -572,7 +576,7 @@ public class ApiClient {
             delimiter = escapeString("|");
         }
 
-        StringBuilder sb = new StringBuilder() ;
+        StringBuilder sb = new StringBuilder();
         for (Object item : value) {
             sb.append(delimiter);
             sb.append(escapeString(parameterToString(item)));
@@ -597,27 +601,28 @@ public class ApiClient {
     /**
      * Check if the given MIME is a JSON MIME.
      * JSON MIME examples:
-     *   application/json
-     *   application/json; charset=UTF8
-     *   APPLICATION/JSON
-     *   application/vnd.company+json
+     * application/json
+     * application/json; charset=UTF8
+     * APPLICATION/JSON
+     * application/vnd.company+json
      * "* / *" is also default to JSON
+     *
      * @param mime MIME (Multipurpose Internet Mail Extensions)
      * @return True if the given MIME is JSON, false otherwise.
      */
     public boolean isJsonMime(String mime) {
-      String jsonMime = "(?i)^(application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(;.*)?$";
-      return mime != null && (mime.matches(jsonMime) || mime.equals("*/*"));
+        String jsonMime = "(?i)^(application/json|[^;/ \t]+/[^;/ \t]+[+]json)[ \t]*(;.*)?$";
+        return mime != null && (mime.matches(jsonMime) || mime.equals("*/*"));
     }
 
     /**
      * Select the Accept header's value from the given accepts array:
-     *   if JSON exists in the given array, use it;
-     *   otherwise use all of them (joining into a string)
+     * if JSON exists in the given array, use it;
+     * otherwise use all of them (joining into a string)
      *
      * @param accepts The accepts array to select from
      * @return The Accept header to use. If the given array is empty,
-     *   null will be returned (not to set the Accept header explicitly).
+     * null will be returned (not to set the Accept header explicitly).
      */
     public String selectHeaderAccept(String[] accepts) {
         if (accepts.length == 0) {
@@ -633,16 +638,16 @@ public class ApiClient {
 
     /**
      * Select the Content-Type header's value from the given array:
-     *   if JSON exists in the given array, use it;
-     *   otherwise use the first one of the array.
+     * if JSON exists in the given array, use it;
+     * otherwise use the first one of the array.
      *
      * @param contentTypes The Content-Type array to select from
      * @return The Content-Type header to use. If the given array is empty,
-     *   or matches "any", JSON will be used.
+     * or matches "any", JSON will be used.
      */
     public String selectHeaderContentType(String[] contentTypes) {
         if (contentTypes.length == 0 || contentTypes[0].equals("*/*")) {
-             return "application/json";
+            return "application/json";
         }
         for (String contentType : contentTypes) {
             if (isJsonMime(contentType)) {
@@ -670,12 +675,12 @@ public class ApiClient {
      * Deserialize response body to Java object, according to the return type and
      * the Content-Type response header.
      *
-     * @param <T> Type
-     * @param response HTTP response
+     * @param <T>        Type
+     * @param response   HTTP response
      * @param returnType The type of the Java object
      * @return The deserialized Java object
      * @throws ApiException If fail to deserialize response body, i.e. cannot read response body
-     *   or the Content-Type of the response is not supported.
+     *                      or the Content-Type of the response is not supported.
      */
     @SuppressWarnings("unchecked")
     public <T> T deserialize(Response response, Type returnType) throws ApiException {
@@ -732,7 +737,7 @@ public class ApiClient {
      * Serialize the given Java object into request body according to the object's
      * class and the request Content-Type.
      *
-     * @param obj The Java object
+     * @param obj         The Java object
      * @param contentType The request Content-Type
      * @return The serialized request body
      * @throws ApiException If fail to serialize the given object
@@ -741,9 +746,9 @@ public class ApiClient {
         if (obj instanceof byte[]) {
             // Binary (byte array) body parameter support.
             return RequestBody.create(MediaType.parse(contentType), (byte[]) obj);
-        } else if (obj instanceof File) {
+        } else if (obj instanceof java.io.File) {
             // File body parameter support.
-            return RequestBody.create(MediaType.parse(contentType), (File) obj);
+            return RequestBody.create(MediaType.parse(contentType), (java.io.File) obj);
         } else if (isJsonMime(contentType)) {
             String content;
             if (obj != null) {
@@ -761,16 +766,19 @@ public class ApiClient {
      * Download file from the given response.
      *
      * @param response An instance of the Response object
-     * @throws ApiException If fail to read file content from response and write to disk
      * @return Downloaded file
+     * @throws ApiException If fail to read file content from response and write to disk
      */
-    public File downloadFileFromResponse(Response response) throws ApiException {
+    public Path downloadFileFromResponse(Response response) throws ApiException {
         try {
-            File file = prepareDownloadFile(response);
-            BufferedSink sink = Okio.buffer(Okio.sink(file));
-            sink.writeAll(response.body().source());
-            sink.close();
-            return file;
+            Path downloaded = prepareDownloadFile(response);
+            try (BufferedSink sink = Okio.buffer(Okio.sink(downloaded))) {
+                sink.writeAll(response.body().source());
+                return downloaded;
+            } catch (IOException exception) {
+                Files.deleteIfExists(downloaded);
+                throw exception;
+            }
         } catch (IOException e) {
             throw new ApiException(e);
         }
@@ -780,10 +788,10 @@ public class ApiClient {
      * Prepare file for download
      *
      * @param response An instance of the Response object
-     * @throws IOException If fail to prepare file for download
      * @return Prepared file for the download
+     * @throws IOException If fail to prepare file for download
      */
-    public File prepareDownloadFile(Response response) throws IOException {
+    public Path prepareDownloadFile(Response response) throws IOException {
         String filename = null;
         String contentDisposition = response.header("Content-Disposition");
         if (contentDisposition != null && !"".equals(contentDisposition)) {
@@ -813,19 +821,16 @@ public class ApiClient {
                 prefix = "download-";
         }
 
-        if (tempFolderPath == null)
-            return File.createTempFile(prefix, suffix);
-        else
-            return File.createTempFile(prefix, suffix, new File(tempFolderPath));
+        return nonNull(tempFolderPath) ? Files.createTempFile(tempFolderPath, prefix, suffix) : Files.createTempFile(prefix, suffix);
     }
 
     /**
      * {@link #execute(Call, Type)}
      *
-     * @param <T> Type
+     * @param <T>  Type
      * @param call An instance of the Call object
-     * @throws ApiException If fail to execute the call
      * @return ApiResponse&lt;T&gt;
+     * @throws ApiException If fail to execute the call
      */
     public <T> ApiResponse<T> execute(Call call) throws ApiException {
         return execute(call, null);
@@ -835,11 +840,11 @@ public class ApiClient {
      * Execute HTTP call and deserialize the HTTP response body into the given return type.
      *
      * @param returnType The return type used to deserialize HTTP response body
-     * @param <T> The return type corresponding to (same with) returnType
-     * @param call Call
+     * @param <T>        The return type corresponding to (same with) returnType
+     * @param call       Call
      * @return ApiResponse object containing response status, headers and
-     *   data, which is a Java object deserialized from response body and would be null
-     *   when returnType is null.
+     * data, which is a Java object deserialized from response body and would be null
+     * when returnType is null.
      * @throws ApiException If fail to execute the call
      */
     public <T> ApiResponse<T> execute(Call call, Type returnType) throws ApiException {
@@ -855,8 +860,8 @@ public class ApiClient {
     /**
      * {@link #executeAsync(Call, Type, ApiCallback)}
      *
-     * @param <T> Type
-     * @param call An instance of the Call object
+     * @param <T>      Type
+     * @param call     An instance of the Call object
      * @param callback ApiCallback&lt;T&gt;
      */
     public <T> void executeAsync(Call call, ApiCallback<T> callback) {
@@ -866,11 +871,11 @@ public class ApiClient {
     /**
      * Execute HTTP call asynchronously.
      *
-     * @see #execute(Call, Type)
-     * @param <T> Type
-     * @param call The callback to be executed when the API call finishes
+     * @param <T>        Type
+     * @param call       The callback to be executed when the API call finishes
      * @param returnType Return type
-     * @param callback ApiCallback
+     * @param callback   ApiCallback
+     * @see #execute(Call, Type)
      */
     @SuppressWarnings("unchecked")
     public <T> void executeAsync(Call call, final Type returnType, final ApiCallback<T> callback) {
@@ -897,12 +902,12 @@ public class ApiClient {
     /**
      * Handle the given response, return the deserialized object when the response is successful.
      *
-     * @param <T> Type
-     * @param response Response
+     * @param <T>        Type
+     * @param response   Response
      * @param returnType Return type
-     * @throws ApiException If the response has a unsuccessful status code or
-     *   fail to deserialize the response body
      * @return Type
+     * @throws ApiException If the response has a unsuccessful status code or
+     *                      fail to deserialize the response body
      */
     public <T> T handleResponse(Response response, Type returnType) throws ApiException {
         if (response.isSuccessful()) {
@@ -936,14 +941,14 @@ public class ApiClient {
     /**
      * Build HTTP call with the given options.
      *
-     * @param path The sub-path of the HTTP URL
-     * @param method The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
-     * @param queryParams The query parameters
-     * @param collectionQueryParams The collection query parameters
-     * @param body The request body object
-     * @param headerParams The header parameters
-     * @param formParams The form parameters
-     * @param authNames The authentications to apply
+     * @param path                    The sub-path of the HTTP URL
+     * @param method                  The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
+     * @param queryParams             The query parameters
+     * @param collectionQueryParams   The collection query parameters
+     * @param body                    The request body object
+     * @param headerParams            The header parameters
+     * @param formParams              The form parameters
+     * @param authNames               The authentications to apply
      * @param progressRequestListener Progress request listener
      * @return The HTTP call
      * @throws ApiException If fail to serialize the request body object
@@ -957,16 +962,16 @@ public class ApiClient {
     /**
      * Build an HTTP request with the given options.
      *
-     * @param path The sub-path of the HTTP URL
-     * @param method The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
-     * @param queryParams The query parameters
-     * @param collectionQueryParams The collection query parameters
-     * @param body The request body object
-     * @param headerParams The header parameters
-     * @param formParams The form parameters
-     * @param authNames The authentications to apply
+     * @param path                    The sub-path of the HTTP URL
+     * @param method                  The request method, one of "GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH" and "DELETE"
+     * @param queryParams             The query parameters
+     * @param collectionQueryParams   The collection query parameters
+     * @param body                    The request body object
+     * @param headerParams            The header parameters
+     * @param formParams              The form parameters
+     * @param authNames               The authentications to apply
      * @param progressRequestListener Progress request listener
-     * @return The HTTP request 
+     * @return The HTTP request
      * @throws ApiException If fail to serialize the request body object
      */
     public Request buildRequest(String path, String method, List<Pair> queryParams, List<Pair> collectionQueryParams, Object body, Map<String, String> headerParams, Map<String, Object> formParams, String[] authNames, ProgressRequestBody.ProgressRequestListener progressRequestListener) throws ApiException {
@@ -1003,7 +1008,7 @@ public class ApiClient {
 
         Request request = null;
 
-        if(progressRequestListener != null && reqBody != null) {
+        if (progressRequestListener != null && reqBody != null) {
             ProgressRequestBody progressRequestBody = new ProgressRequestBody(reqBody, progressRequestListener);
             request = reqBuilder.method(method, progressRequestBody).build();
         } else {
@@ -1016,8 +1021,8 @@ public class ApiClient {
     /**
      * Build full URL by concatenating base path, the given sub path and query parameters.
      *
-     * @param path The sub path
-     * @param queryParams The query parameters
+     * @param path                  The sub path
+     * @param queryParams           The query parameters
      * @param collectionQueryParams The collection query parameters
      * @return The full URL
      */
@@ -1066,7 +1071,7 @@ public class ApiClient {
      * Set header parameters to the request builder, including default headers.
      *
      * @param headerParams Header parameters in the ofrm of Map
-     * @param reqBuilder Reqeust.Builder
+     * @param reqBuilder   Reqeust.Builder
      */
     public void processHeaderParams(Map<String, String> headerParams, Request.Builder reqBuilder) {
         for (Entry<String, String> param : headerParams.entrySet()) {
@@ -1082,9 +1087,9 @@ public class ApiClient {
     /**
      * Update query and header parameters based on authentication settings.
      *
-     * @param authNames The authentications to apply
+     * @param authNames    The authentications to apply
      * @param queryParams  List of query parameters
-     * @param headerParams  Map of header parameters
+     * @param headerParams Map of header parameters
      */
     public void updateParamsForAuth(String[] authNames, List<Pair> queryParams, Map<String, String> headerParams) {
         for (String authName : authNames) {
@@ -1101,7 +1106,7 @@ public class ApiClient {
      * @return RequestBody
      */
     public RequestBody buildRequestBodyFormEncoding(Map<String, Object> formParams) {
-        FormEncodingBuilder formBuilder  = new FormEncodingBuilder();
+        FormEncodingBuilder formBuilder = new FormEncodingBuilder();
         for (Entry<String, Object> param : formParams.entrySet()) {
             formBuilder.add(param.getKey(), parameterToString(param.getValue()));
         }
@@ -1118,8 +1123,8 @@ public class ApiClient {
     public RequestBody buildRequestBodyMultipart(Map<String, Object> formParams) {
         MultipartBuilder mpBuilder = new MultipartBuilder().type(MultipartBuilder.FORM);
         for (Entry<String, Object> param : formParams.entrySet()) {
-            if (param.getValue() instanceof File) {
-                File file = (File) param.getValue();
+            if (param.getValue() instanceof java.io.File) {
+                java.io.File file = (java.io.File) param.getValue();
                 Headers partHeaders = Headers.of("Content-Disposition", "form-data; name=\"" + param.getKey() + "\"; filename=\"" + file.getName() + "\"");
                 MediaType mediaType = MediaType.parse(guessContentTypeFromFile(file));
                 mpBuilder.addPart(partHeaders, RequestBody.create(mediaType, file));
@@ -1137,13 +1142,9 @@ public class ApiClient {
      * @param file The given file
      * @return The guessed Content-Type
      */
-    public String guessContentTypeFromFile(File file) {
+    public String guessContentTypeFromFile(java.io.File file) {
         String contentType = URLConnection.guessContentTypeFromName(file.getName());
-        if (contentType == null) {
-            return "application/octet-stream";
-        } else {
-            return contentType;
-        }
+        return nonNull(contentType) ? contentType : "application/octet-stream";
     }
 
     /**
@@ -1157,14 +1158,20 @@ public class ApiClient {
             if (!verifyingSsl) {
                 TrustManager trustAll = new X509TrustManager() {
                     @Override
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+                    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    }
+
                     @Override
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {}
+                    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                    }
+
                     @Override
-                    public X509Certificate[] getAcceptedIssuers() { return null; }
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
                 };
                 SSLContext sslContext = SSLContext.getInstance("TLS");
-                trustManagers = new TrustManager[]{ trustAll };
+                trustManagers = new TrustManager[]{trustAll};
                 hostnameVerifier = (hostname, session) -> true;
             } else if (sslCaCert != null) {
                 char[] password = null; // Any password will work.

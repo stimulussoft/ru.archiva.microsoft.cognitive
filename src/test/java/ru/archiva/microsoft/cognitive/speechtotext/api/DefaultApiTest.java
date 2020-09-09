@@ -15,6 +15,7 @@ import ru.archiva.microsoft.cognitive.speechtotext.model.Endpoint;
 import ru.archiva.microsoft.cognitive.speechtotext.model.EndpointUpdate;
 import ru.archiva.microsoft.cognitive.speechtotext.model.Evaluation;
 import ru.archiva.microsoft.cognitive.speechtotext.model.EvaluationUpdate;
+import ru.archiva.microsoft.cognitive.speechtotext.model.File;
 import ru.archiva.microsoft.cognitive.speechtotext.model.HealthStatus;
 import ru.archiva.microsoft.cognitive.speechtotext.model.ManagementModel;
 import ru.archiva.microsoft.cognitive.speechtotext.model.ManagementModelArray;
@@ -36,8 +37,6 @@ import ru.archiva.microsoft.cognitive.speechtotext.model.Transcription;
 import ru.archiva.microsoft.cognitive.speechtotext.model.TranscriptionUpdate;
 import ru.archiva.microsoft.cognitive.speechtotext.model.WebHook;
 import ru.archiva.microsoft.cognitive.speechtotext.model.WebHookUpdate;
-
-import java.io.File;
 
 /**
  * API tests for DefaultApi
