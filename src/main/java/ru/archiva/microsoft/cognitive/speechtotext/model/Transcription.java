@@ -149,6 +149,15 @@ public class Transcription {
     return self;
   }
 
+  /**
+   * <p>Parse {@code this.getSelf()} and retrieve transcription uid from url</p>
+   * @return transcription UID
+   */
+  public String getUID() {
+    String[] location = getSelf().split("/");
+    return location[location.length - 1];
+  }
+
   public Transcription model(EntityReference model) {
     this.model = model;
     return this;
